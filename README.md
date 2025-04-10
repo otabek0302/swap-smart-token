@@ -64,3 +64,45 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## 📞 Support
 
 For support, email support@fenixsystems.com or join our [Discord](https://discord.gg/your-discord) server.
+
+## Author
+- **Otabek Amonov**
+- Email: otabekjon0302@gmail.com
+
+## Project Structure
+```
+cryptocurrency-exchange/
+├── backend/           # Smart contracts and deployment scripts
+│   ├── contracts/    # Solidity smart contracts
+│   ├── scripts/      # Deployment and utility scripts
+│   └── test/         # Smart contract tests
+└── frontend/         # React frontend application
+```
+
+## Smart Contracts
+The project includes the following main smart contracts:
+- `TokenSwap.sol`: Handles token swapping functionality
+- `Exchange.sol`: Main exchange contract
+
+## Deployment
+To deploy the smart contracts:
+
+1. Install dependencies:
+```bash
+cd backend
+npm install
+```
+
+2. Configure environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+3. Deploy contracts:
+```bash
+npx hardhat run scripts/deploy.js --network <network-name>
+```
+
+## Frontend
+The frontend is built with React and provides a user-friendly interface for interacting with the smart contracts.
