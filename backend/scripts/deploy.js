@@ -1,46 +1,32 @@
 const hre = require("hardhat");
 
 async function main() {
-    // Get the contract factory
-    const TokenSwap = await hre.ethers.getContractFactory("TokenSwap");
-    
-    // Deploy the contract with required parameters
-    console.log("Deploying TokenSwap contract...");
-    const tokenSwap = await TokenSwap.deploy(
-        "YOUR_AOG_TOKEN_ADDRESS", // Replace with actual AOG token address
-        "YOUR_AOS_TOKEN_ADDRESS", // Replace with actual AOS token address
-        2 // Exchange rate: 1 AOG = 2 AOS
-    );
-    
-    // Wait for deployment to complete
-    await tokenSwap.deployed();
-    
-    console.log(`✅ TokenSwap deployed to: ${tokenSwap.address}`);
-    
-    // Verify the contract on Etherscan (if on a supported network)
-    if (hre.network.name !== "hardhat") {
-        console.log("Waiting for 5 block confirmations...");
-        await tokenSwap.deployTransaction.wait(5);
-        
-        try {
-            await hre.run("verify:verify", {
-                address: tokenSwap.address,
-                constructorArguments: [
-                    "YOUR_AOG_TOKEN_ADDRESS",
-                    "YOUR_AOS_TOKEN_ADDRESS",
-                    2
-                ],
-            });
-            console.log("Contract verified on Etherscan!");
-        } catch (error) {
-            console.error("Error verifying contract:", error.message);
-        }
-    }
+  const { ethers } = hre;
+
+  const [deployer] = await ethers.getSigners();
+  console.log("Deployer:", deployer.address);
+
+  const AOG = await ethers.getContractFactory("AOGToken");
+  const aog = await AOG.deploy(ethers.utils.parseEther("10000000"));
+  await aog.deployed();
+  console.log("✅ AOG deployed at:", aog.address);
+
+  const AOS = await ethers.getContractFactory("AOSToken");
+  const aos = await AOS.deploy(ethers.utils.parseEther("10000000"));
+  await aos.deployed();
+  console.log("✅ AOS deployed at:", aos.address);
+
+  const MiniSwap = await ethers.getContractFactory("MiniSwap");
+  const swap = await MiniSwap.deploy(aog.address, aos.address, 2);
+  await swap.deployed();
+  console.log("✅ MiniSwap deployed at:", swap.address);
+
+  await aog.approve(swap.address, ethers.constants.MaxUint256);
+  await aos.approve(swap.address, ethers.constants.MaxUint256);
+  console.log("✅ Tokens approved!");
 }
 
-main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+main().catch((error) => {
+  console.error("❌ Deployment failed:", error);
+  process.exitCode = 1;
+});
