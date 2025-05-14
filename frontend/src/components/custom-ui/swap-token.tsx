@@ -3,7 +3,17 @@
 import { AmountIn } from './amount-in';
 import { AmountOut } from './amount-out';
 
-export function SwapToken() {
+interface TokenData {
+  aogPrice: number;
+  aosPrice: number;
+  lastUpdated: string;
+}
+
+interface SwapTokenProps {
+  initialData: TokenData;
+}
+
+export function SwapToken({ initialData }: SwapTokenProps) {
   return (
     <div className="px-4 py-6 w-full max-w-lg h-full border-[0.5px] border-gray-50 rounded-2xl shadow-xl gradient-border">
       <div className="flex items-center justify-center">
@@ -11,10 +21,11 @@ export function SwapToken() {
       </div>
       <div className="p-4">
         <div className="space-y-6">
-          <AmountIn />
-          <AmountOut />
-          <div className="flex items-center justify-center">
+          <AmountIn initialPrice={initialData.aogPrice} />
+          <AmountOut initialPrice={initialData.aosPrice} />
+          <div className="flex flex-col items-center justify-center gap-2">
             <button className="w-full bg-primary hover:bg-primary/80 text-white font-bold py-2 rounded-lg cursor-pointer">Swap</button>
+            <p className="text-sm text-gray-400">Last updated: {new Date(initialData.lastUpdated).toLocaleTimeString()}</p>
           </div>
         </div>
       </div>

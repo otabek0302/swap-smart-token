@@ -1,7 +1,12 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useAccount } from "wagmi";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export function Connection() {
+    const { address } = useAccount();
+    console.log(address);
     return (
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/80 cursor-pointer">Connect Wallet</Button>
+        <ConnectButton />
     )
 }

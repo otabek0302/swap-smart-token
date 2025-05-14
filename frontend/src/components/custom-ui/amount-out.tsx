@@ -1,8 +1,27 @@
-export function AmountOut() {
+'use client';
+
+interface AmountOutProps {
+  initialPrice: number;
+}
+
+export function AmountOut({ initialPrice }: AmountOutProps) {
   return (
-    <div className="flex flex-col gap-1">
-        <label htmlFor="amount-out" className="text-sm font-medium text-gray-400">Amount Out</label>
-        <input type="text" id="amount-out" className="w-full p-2 rounded-lg border border-gray-300" />
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium">You Receive</label>
+        <span className="text-sm text-gray-400">Price: ${initialPrice}</span>
+      </div>
+      <div className="flex items-center gap-2 p-2 border rounded-lg">
+        <input
+          type="number"
+          placeholder="0.0"
+          className="flex-1 bg-transparent outline-none"
+          readOnly
+        />
+        <button className="px-2 py-1 text-sm bg-white/5 rounded hover:bg-white/10">
+          AOS
+        </button>
+      </div>
     </div>
   );
 }

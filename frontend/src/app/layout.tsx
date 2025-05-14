@@ -1,4 +1,5 @@
 import './globals.css';
+import '@rainbow-me/rainbowkit/styles.css';
 
 import { ReactNode } from 'react';
 import { Poppins } from 'next/font/google';
