@@ -16,13 +16,20 @@ async function main() {
   await aos.deployed();
   console.log("✅ AOS deployed at:", aos.address);
 
-  const MiniSwap = await ethers.getContractFactory("MiniSwap");
-  const swap = await MiniSwap.deploy(aog.address, aos.address, 2);
-  await swap.deployed();
-  console.log("✅ MiniSwap deployed at:", swap.address);
+  const Factory = await ethers.getContractFactory("MiniSwapFactory");
+  const factory = await Factory.deploy();
+  await factory.deployed();
+  console.log("✅ MiniSwapFactory deployed at:", factory.address);
 
-  await aog.approve(swap.address, ethers.constants.MaxUint256);
-  await aos.approve(swap.address, ethers.constants.MaxUint256);
+  const tx = await factory.createPair(aog.address, aos.address, 2);
+  const receipt = await tx.wait();
+  const event = receipt.events?.find(e => e.event === "PairCreated");
+  const pairAddress = event?.args?.pair;
+
+  console.log("✅ MiniSwap pair created at:", pairAddress);
+
+  await aog.approve(pairAddress, ethers.constants.MaxUint256);
+  await aos.approve(pairAddress, ethers.constants.MaxUint256);
   console.log("✅ Tokens approved!");
 }
 

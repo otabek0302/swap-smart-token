@@ -16,6 +16,7 @@ export interface Pool {
     token0: Token;
     token1: Token;
     address: string;
+    rate: bigint;
 }
 
 export interface Helper {
