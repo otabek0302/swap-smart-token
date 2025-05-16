@@ -11,7 +11,7 @@ interface AmountInProps {
   onAmountChange?: (amount: string) => void;
 }
 
-  export function AmountIn({ pools, onTokenSelect, onAmountChange }: AmountInProps) {
+export function AmountIn({ pools, onTokenSelect, onAmountChange }: AmountInProps) {
   const { address } = useAccount();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -52,7 +52,7 @@ interface AmountInProps {
       </div>
       <div className="flex items-center gap-2 p-2 border rounded-lg">
         <input type="number" value={amount} onChange={(e) => handleAmountChange(e.target.value)} placeholder="0.0" className="flex-1 bg-transparent outline-none" />
-        <div className="relative z-50">
+        <div className="relative z-20">
           <button onClick={() => setIsOpen(!isOpen)} className="px-2 py-1 text-sm bg-white/5 rounded hover:bg-white/10 flex items-center gap-1">
             {selectedToken?.symbol || 'Select Token'}
             <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +61,7 @@ interface AmountInProps {
           </button>
 
           {isOpen && (
-            <div className="absolute w-full h-full right-0 mt-1 w-48 bg-background border rounded-lg shadow-lg z-50">
+            <div className="absolute w-full right-0 mt-1 w-48 bg-background border rounded-lg shadow-lg z-50">
               {availableTokens.map((token) => (
                 <button key={token.address} onClick={() => handleTokenSelect(token)} className="w-full px-4 py-2 text-left hover:bg-white/5 flex items-center gap-2">
                   <span>{token.symbol}</span>

@@ -4,6 +4,7 @@ import { sepolia } from 'wagmi/chains';
 export const ROUTER_ADDRESS = process.env.NEXT_PUBLIC_ROUTER_ADDRESS as `0x${string}` | undefined;
 export const AOG_ADDRESS = process.env.NEXT_PUBLIC_AOG_ADDRESS as `0x${string}` | undefined;
 export const AOS_ADDRESS = process.env.NEXT_PUBLIC_AOS_ADDRESS as `0x${string}` | undefined;
+export const MINI_SWAP_ADDRESS = process.env.NEXT_PUBLIC_MINI_SWAP_ADDRESS as `0x${string}` | undefined;
 
 export const FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`;
 

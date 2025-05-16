@@ -2,17 +2,19 @@
 
 import { useState } from 'react';
 import { Pool, Token } from '@/interfaces/interface';
-import { getCounterPartTokens, findPoolByTokens } from '@/lib/helper';
+import { getCounterPartTokens } from '@/lib/helper';
 import { useAccount, useBalance } from 'wagmi';
 
 interface AmountOutProps {
   pools: Pool[];
   selectedToken: Token | null;
   amountIn: string;
+  amountOut: string;
   onTokenSelect?: (token: Token) => void;
+  disabled?: boolean;
 }
 
-export function AmountOut({ pools, selectedToken, amountIn, onTokenSelect }: AmountOutProps) {
+export function AmountOut({ pools, selectedToken, amountIn, amountOut, onTokenSelect, disabled }: AmountOutProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [toToken, setToToken] = useState<Token | null>(null);
   const { address } = useAccount();
@@ -32,18 +34,6 @@ export function AmountOut({ pools, selectedToken, amountIn, onTokenSelect }: Amo
     onTokenSelect?.(token);
   };
 
-  // Calculate output amount based on pool reserves
-  const calculateOutputAmount = () => {
-    if (!selectedToken || !toToken || !amountIn || amountIn === '0') return '0.0';
-
-    const pool = findPoolByTokens(pools, selectedToken, toToken);
-    if (!pool) return '0.0';
-
-    // TODO: Implement actual swap calculation using pool reserves
-    // This is a placeholder that should be replaced with the actual calculation
-    return (parseFloat(amountIn) * 0.997).toFixed(6);
-  };
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -52,10 +42,10 @@ export function AmountOut({ pools, selectedToken, amountIn, onTokenSelect }: Amo
           <span className="text-sm text-gray-400">Balance: {balance?.formatted || '0.0'}</span>
         </div>
       </div>
-      <div className="flex items-center gap-2 p-2 border rounded-lg">
-        <input type="text" value={calculateOutputAmount()} readOnly placeholder="0.0" className="flex-1 bg-transparent outline-none" />
-        <div className="relative z-50">
-          <button onClick={() => setIsOpen(!isOpen)} className="px-2 py-1 text-sm bg-white/5 rounded hover:bg-white/10 flex items-center gap-1">
+      <div className={`flex items-center gap-2 p-2 border rounded-lg ${disabled ? 'opacity-50' : ''}`}>
+        <input type="text" value={amountOut ? amountOut : amountIn ? 'Calculating...' : '0.0'} readOnly placeholder="0.0" className="flex-1 bg-transparent outline-none" disabled={disabled} />
+        <div className="relative z-20">
+          <button onClick={() => setIsOpen(!isOpen)} className={`px-2 py-1 text-sm bg-white/5 rounded hover:bg-white/10 flex items-center gap-1 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`} disabled={disabled}>
             {toToken?.symbol || 'Select Token'}
             <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -63,7 +53,7 @@ export function AmountOut({ pools, selectedToken, amountIn, onTokenSelect }: Amo
           </button>
 
           {isOpen && (
-            <div className="absolute w-full h-full right-0 mt-1 w-48 bg-background border rounded-lg shadow-lg z-50">
+            <div className="absolute w-full right-0 mt-1 w-48 bg-background border rounded-lg shadow-lg z-50">
               {counterpartTokens.map((token) => (
                 <button key={token.address} onClick={() => handleTokenSelect(token)} className="w-full px-4 py-2 text-left hover:bg-white/5 flex items-center gap-2">
                   <span>{token.symbol}</span>
