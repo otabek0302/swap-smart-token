@@ -10,7 +10,7 @@ import { logo } from '@/assets';
 export default function SwapPage() {
   const { pools, loading } = usePools();
 
-  console.log("Pools in SwapToken:", pools);
+  // console.log("Pools in SwapToken:", pools);
 
   return (
     <section className="relative">

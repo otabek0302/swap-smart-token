@@ -14,6 +14,7 @@ interface SwapTokenProps {
 
 export function SwapToken({ pools }: SwapTokenProps) {
   const { address } = useAccount();
+  
   const [fromToken, setFromToken] = useState<Token | null>(null);
   const [toToken, setToToken] = useState<Token | null>(null);
   const [amountIn, setAmountIn] = useState('');
@@ -130,7 +131,6 @@ export function SwapToken({ pools }: SwapTokenProps) {
 
       // Check if approval is needed with proper BigInt comparison
       if (!allowance || BigInt(allowance.toString()) < amountInWei) {
-        console.log('Approval needed. Current allowance:', allowance ? formatEther(allowance) : '0');
         // Request approval
         const approvalResult = await approve({
           address: fromTokenAddress,
@@ -151,14 +151,12 @@ export function SwapToken({ pools }: SwapTokenProps) {
         });
 
         if (approvalResult) {
-          console.log('Approval transaction hash:', approvalResult);
           setTxHash(approvalResult);
           toast.success('Approval successful!');
         }
         return;
       }
-
-      console.log('Executing swap with gas limit fallback...');
+      
       // Execute swap with gas limit fallback
       const swapResult = await swap({
         address: miniSwapAddress,
@@ -181,13 +179,27 @@ export function SwapToken({ pools }: SwapTokenProps) {
       });
 
       if (swapResult) {
-        console.log('Swap transaction hash:', swapResult);
         setTxHash(swapResult);
         toast.success('Swap successful!');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Swap error:', error);
-      toast.error('Transaction failed. Please try again.');
+      
+      // Handle specific contract errors
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('execution reverted')) {
+        if (errorMessage.includes('Insufficient liquidity')) {
+          toast.error('Insufficient liquidity in the pool. Please try a smaller amount.');
+        } else if (errorMessage.includes('Invalid token pair')) {
+          toast.error('Invalid token pair. Please select tokens from the same pool.');
+        } else if (errorMessage.includes('Invalid pair')) {
+          toast.error('Invalid token pair or rate calculation error.');
+        } else {
+          toast.error(`Transaction failed: ${errorMessage}`);
+        }
+      } else {
+        toast.error('Transaction failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

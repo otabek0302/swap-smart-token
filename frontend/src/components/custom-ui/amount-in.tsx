@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pool, Token } from '@/interfaces/interface';
 import { getAvailableToken } from '@/lib/helper';
 import { useAccount, useBalance } from 'wagmi';
@@ -20,7 +20,7 @@ export function AmountIn({ pools, onTokenSelect, onAmountChange }: AmountInProps
 
   const availableTokens = getAvailableToken(pools);
 
-  const { data: balance } = useBalance({
+  const { data: balance, refetch } = useBalance({
     address,
     token: selectedToken?.address as `0x${string}`,
     query: {
@@ -29,6 +29,8 @@ export function AmountIn({ pools, onTokenSelect, onAmountChange }: AmountInProps
   });
 
   const handleTokenSelect = (token: Token) => {
+    console.log('token', token);
+    
     setSelectedToken(token);
     setIsOpen(false);
     onTokenSelect?.(token);
@@ -38,6 +40,12 @@ export function AmountIn({ pools, onTokenSelect, onAmountChange }: AmountInProps
     setAmount(value);
     onAmountChange?.(value);
   };
+
+  useEffect(() => {
+    if (selectedToken) {  
+      refetch();
+    }
+  }, [selectedToken, refetch]);
 
   return (
     <div className="space-y-2">

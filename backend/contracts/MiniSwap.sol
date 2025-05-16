@@ -25,6 +25,7 @@ contract MiniSwap {
         IERC20(from).transferFrom(msg.sender, address(this), amountIn);
 
         uint amountOut = getAmountOut(amountIn, from, to);
+        require(IERC20(to).balanceOf(address(this)) >= amountOut, "Insufficient liquidity");
         IERC20(to).transfer(msg.sender, amountOut);
 
         emit Swapped(msg.sender, from, to, amountIn, amountOut);

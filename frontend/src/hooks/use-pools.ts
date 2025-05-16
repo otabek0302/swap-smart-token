@@ -30,6 +30,8 @@ export const usePools = () => {
       enabled: !!allPairs?.length && pairsStatus === 'success',
     },
   });
+  
+  
 
   // 3. Build final pool list
   useEffect(() => {
@@ -43,7 +45,7 @@ export const usePools = () => {
 
     // If we have no pairs, we're done loading
     if (!allPairs?.length) {
-      console.log('No pairs found, setting empty pools');
+      // console.log('No pairs found, setting empty pools');
       setPools([]);
       setLoading(false);
       return;
@@ -51,7 +53,7 @@ export const usePools = () => {
 
     // If we're still waiting for data, keep loading
     if (!tokenInfo || pairsStatus !== 'success' || tokenInfoStatus !== 'success') {
-      console.log('Waiting for data to be ready');
+      // console.log('Waiting for data to be ready');
       return;
     }
 
@@ -84,7 +86,7 @@ export const usePools = () => {
         });
       }
     }
-
+    
     setPools(result);
     setLoading(false);
   }, [allPairs, tokenInfo, pairsError, pairsStatus, tokenInfoStatus]);
