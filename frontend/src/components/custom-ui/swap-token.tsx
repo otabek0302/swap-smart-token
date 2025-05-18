@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Pool, Token } from '@/interfaces/interface';
 import { AmountIn } from './amount-in';
 import { AmountOut } from './amount-out';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { toast } from 'sonner';
 
@@ -14,13 +14,14 @@ interface SwapTokenProps {
 
 export function SwapToken({ pools }: SwapTokenProps) {
   const { address } = useAccount();
-  
+
   const [fromToken, setFromToken] = useState<Token | null>(null);
   const [toToken, setToToken] = useState<Token | null>(null);
   const [amountIn, setAmountIn] = useState('');
   const [amountOut, setAmountOut] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<'success' | 'fail' | null>(null);
 
   const miniSwapAddress = process.env.NEXT_PUBLIC_MINI_SWAP_ADDRESS as `0x${string}`;
 
@@ -63,11 +64,7 @@ export function SwapToken({ pools }: SwapTokenProps) {
       },
     ],
     functionName: 'getAmountOut',
-    args: [
-      amountIn ? parseEther(amountIn) : BigInt(0),
-      fromToken?.address as `0x${string}`,
-      toToken?.address as `0x${string}`,
-    ],
+    args: [amountIn ? parseEther(amountIn) : BigInt(0), fromToken?.address as `0x${string}`, toToken?.address as `0x${string}`],
     query: {
       enabled: !!fromToken && !!toToken && !!amountIn && amountIn !== '0',
     },
@@ -100,22 +97,19 @@ export function SwapToken({ pools }: SwapTokenProps) {
     console.log('Swap attempt:', {
       from: {
         symbol: fromToken.symbol,
-        address: fromToken.address
+        address: fromToken.address,
       },
       to: {
         symbol: toToken.symbol,
-        address: toToken.address
+        address: toToken.address,
       },
       amountIn,
       amountOut,
-      allowance: allowance ? formatEther(allowance) : '0'
+      allowance: allowance ? formatEther(allowance) : '0',
     });
 
     // Validate token pair
-    const pool = pools.find(p => 
-      (p.token0.address === fromToken.address && p.token1.address === toToken.address) ||
-      (p.token0.address === toToken.address && p.token1.address === fromToken.address)
-    );
+    const pool = pools.find((p) => (p.token0.address === fromToken.address && p.token1.address === toToken.address) || (p.token0.address === toToken.address && p.token1.address === fromToken.address));
 
     if (!pool) {
       toast.error('Invalid token pair. Please select tokens from the same pool.');
@@ -125,6 +119,7 @@ export function SwapToken({ pools }: SwapTokenProps) {
     try {
       setIsLoading(true);
       setTxHash(null);
+      setTxStatus(null);
       const amountInWei = parseEther(amountIn);
       const fromTokenAddress = fromToken.address as `0x${string}`;
       const toTokenAddress = toToken.address as `0x${string}`;
@@ -156,7 +151,7 @@ export function SwapToken({ pools }: SwapTokenProps) {
         }
         return;
       }
-      
+
       // Execute swap with gas limit fallback
       const swapResult = await swap({
         address: miniSwapAddress,
@@ -180,30 +175,60 @@ export function SwapToken({ pools }: SwapTokenProps) {
 
       if (swapResult) {
         setTxHash(swapResult);
-        toast.success('Swap successful!');
+        toast.success('Swap transaction sent!');
       }
     } catch (error: unknown) {
       console.error('Swap error:', error);
-      
-      // Handle specific contract errors
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('execution reverted')) {
-        if (errorMessage.includes('Insufficient liquidity')) {
-          toast.error('Insufficient liquidity in the pool. Please try a smaller amount.');
-        } else if (errorMessage.includes('Invalid token pair')) {
-          toast.error('Invalid token pair. Please select tokens from the same pool.');
-        } else if (errorMessage.includes('Invalid pair')) {
-          toast.error('Invalid token pair or rate calculation error.');
+
+      // Handle specific error types
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+
+        // Handle MetaMask rejection
+        if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
+          toast.error('Transaction was rejected. Please try again.');
+          setTxStatus('fail');
+          return;
+        }
+
+        // Handle contract errors
+        if (errorMessage.includes('execution reverted')) {
+          if (errorMessage.includes('Insufficient liquidity')) {
+            toast.error('Insufficient liquidity in the pool. Please try a smaller amount.');
+          } else {
+            toast.error(`Transaction failed: ${errorMessage}`);
+          }
         } else {
-          toast.error(`Transaction failed: ${errorMessage}`);
+          toast.error('Transaction failed. Please try again.');
         }
       } else {
-        toast.error('Transaction failed. Please try again.');
+        toast.error('An unexpected error occurred. Please try again.');
       }
+
+      setTxStatus('fail');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const {
+    data: receipt, isSuccess, isError } = useWaitForTransactionReceipt({
+    hash: txHash as `0x${string}`,
+    query: {
+      enabled: !!txHash,
+    },
+  });
+
+  // Update transaction status based on receipt
+  useEffect(() => {
+    if (isSuccess && receipt) {
+      setTxStatus('success');
+      toast.success('Transaction confirmed!');
+    } else if (isError) {
+      setTxStatus('fail');
+      toast.error('Transaction failed.');
+    }
+  }, [isSuccess, isError, receipt]);
 
   if (!address) {
     return (
@@ -213,7 +238,23 @@ export function SwapToken({ pools }: SwapTokenProps) {
     );
   }
 
-  const isButtonDisabled = !fromToken?.address || !toToken?.address || !amountIn?.trim() || !amountOut?.trim() || isLoading;
+  const getButtonText = () => {
+    if (isLoading) {
+      return 'Processing...';
+    }
+    if (txHash && !txStatus) {
+      return 'Confirming...';
+    }
+    if (txStatus === 'success') {
+      return 'Swap Successful!';
+    }
+    if (txStatus === 'fail') {
+      return 'Swap Failed - Try Again';
+    }
+    return 'Swap';
+  };
+
+  const isButtonDisabled = !fromToken?.address || !toToken?.address || !amountIn?.trim() || !amountOut?.trim() || isLoading || (txHash && !txStatus);
 
   return (
     <div className="px-4 py-6 w-full max-w-lg h-full border-[0.5px] border-gray-50 rounded-2xl shadow-xl gradient-border">
@@ -225,11 +266,21 @@ export function SwapToken({ pools }: SwapTokenProps) {
           <AmountIn pools={pools} onTokenSelect={setFromToken} onAmountChange={setAmountIn} />
           <AmountOut pools={pools} selectedToken={fromToken} amountIn={amountIn} amountOut={amountOut} onTokenSelect={setToToken} disabled={!fromToken} />
 
-          {txHash && <div className="text-sm text-gray-400 break-all z-50">Transaction Hash: {txHash}</div>}
+          {txHash && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className={`text-sm break-all z-50 ${txStatus === 'fail' ? 'text-red-500' : txStatus === 'success' ? 'text-green-500' : 'text-gray-400'}`}>
+                  Transaction Hash: {txHash}
+                </a>
+                {txStatus && <span className={`px-2 py-1 rounded-full text-xs font-medium ${txStatus === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{txStatus === 'success' ? 'Success' : 'Failed'}</span>}
+              </div>
+              {!txStatus && <p className="text-sm text-gray-400">Waiting for confirmation... This may take a few moments.</p>}
+            </div>
+          )}
 
-          <div className="flex flex-col items-center justify-center gap-2 z-50">
-            <button className="w-full bg-primary hover:bg-primary/80 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg cursor-pointer disabled:cursor-not-allowed z-50" disabled={isButtonDisabled} onClick={handleSwap}>
-              {isLoading ? 'Processing...' : 'Swap'}
+          <div className="flex flex-col items-center justify-center gap-2 z-40">
+            <button className={`w-full font-bold py-2 rounded-lg cursor-pointer disabled:cursor-not-allowed z-40 ${txStatus === 'success' ? 'bg-green-500 hover:bg-green-600 text-white' : txStatus === 'fail' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-primary hover:bg-primary/80 disabled:bg-gray-500 text-white'}`} disabled={isButtonDisabled || !txHash} onClick={handleSwap}>
+              {getButtonText()}
             </button>
           </div>
         </div>

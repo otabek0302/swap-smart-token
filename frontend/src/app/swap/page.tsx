@@ -14,8 +14,8 @@ export default function SwapPage() {
 
   return (
     <section className="relative">
-      <div className="container mx-auto">
-        <div className="flex items-center justify-between h-[calc(100vh-150px)] gap-20">
+      <div className="container px-4 md:px-6 mx-auto">
+        <div className="pb-10 md:pb-0 flex flex-col md:flex-row items-center justify-between h-screen md:h-[calc(100vh-150px)] gap-10 md:gap-20">
           <div className="relative flex-1 max-w-2xl">
             <SwapAnimation />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">

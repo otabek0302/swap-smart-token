@@ -152,7 +152,7 @@
   width: 423px;
   height: 223px;
   border-radius: 50%;
-  z-index: 1;
+  z-index: -1;
 
   background: #3B82F6;
   filter: blur(200px);
